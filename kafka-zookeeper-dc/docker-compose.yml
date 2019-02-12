@@ -1,0 +1,30 @@
+version: '2.4'
+services:
+  #Zookeper
+  zookeeper:
+    image: zookeeper
+    healthcheck:
+      test: "bash -c \"[ $$(echo ruok | nc 127.0.0.1:2181) == 'imok' ] || exit 1\""
+      interval: 1s
+      timeout: 5s
+      retries: 180
+    mem_limit: 1g
+    ports:
+      - "2182:2181"
+  #Kafka
+  kafka:
+    image: wurstmeister/kafka
+    ports:
+      - "9092:9092"
+    healthcheck:
+      test: ["CMD", "bash", "-c", "unset" , "JMX_PORT" ,";" ,"kafka-topics.sh","--zookeeper","zookeeper:2181","--list"]
+      interval: 1s
+      timeout: 5s
+      retries: 180
+    mem_limit: 512m
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_HOST_NAME: localhost
